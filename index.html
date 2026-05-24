@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Note Application</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .note-input {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            margin-bottom: 30px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .notes-container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .notes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .notes-header h2 {
+            color: #333;
+            font-size: 1.5em;
+        }
+
+        .refresh-btn {
+            background: #f0f0f0;
+            color: #333;
+            padding: 8px 20px;
+            font-size: 14px;
+        }
+
+        .refresh-btn:hover {
+            background: #e0e0e0;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .notes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .note-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .note-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .note-content {
+            color: #333;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+            word-wrap: break-word;
+        }
+
+        .note-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 10px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .note-date {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .delete-btn {
+            background: #ff4757;
+            padding: 6px 15px;
+            font-size: 12px;
+        }
+
+        .delete-btn:hover {
+            background: #ff3838;
+            box-shadow: 0 3px 10px rgba(255, 71, 87, 0.3);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #c62828;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 Quick Note Application</h1>
+        
+        <!-- Note Input Section -->
+        <div class="note-input">
+            <textarea 
+                id="noteContent" 
+                placeholder="Write your note here..."
+            ></textarea>
+            <button onclick="saveNote()">Save Note</button>
+        </div>
+
+        <!-- Notes Display Section -->
+        <div class="notes-container">
+            <div class="notes-header">
+                <h2>Your Notes</h2>
+                <button class="refresh-btn" onclick="loadNotes()">🔄 Refresh</button>
+            </div>
+            
+            <div id="notesList" class="notes-list">
+                <!-- Notes will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Load notes when page loads
+        document.addEventListener('DOMContentLoaded', loadNotes);
+
+        // Function to save a note
+        async function saveNote() {
+            const content = document.getElementById('noteContent').value.trim();
+            
+            if (!content) {
+                alert('Please enter a note!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/notes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ content: content })
+                });
+
+                if (response.ok) {
+                    // Clear the input field
+                    document.getElementById('noteContent').value = '';
+                    // Reload the notes list
+                    loadNotes();
+                } else {
+                    alert('Failed to save note. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error saving note. Please check if the server is running.');
+            }
+        }
+
+        // Function to load all notes
+        async function loadNotes() {
+            const notesList = document.getElementById('notesList');
+            notesList.innerHTML = '<div class="loading">Loading notes...</div>';
+
+            try {
+                const response = await fetch('/api/notes');
+                const notes = await response.json();
+
+                if (notes.length === 0) {
+                    notesList.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                            <p>No notes yet. Start by writing your first note above!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                notesList.innerHTML = notes.map(note => `
+                    <div class="note-card">
+                        <div class="note-content">${escapeHtml(note.content)}</div>
+                        <div class="note-footer">
+                            <span class="note-date">${formatDate(note.created_at)}</span>
+                            <button class="delete-btn" onclick="deleteNote(${note.id})">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                console.error('Error:', error);
+                notesList.innerHTML = `
+                    <div class="error">
+                        Failed to load notes. Please make sure the server is running.
+                    </div>
+                `;
+            }
+        }
+
+        // Function to delete a note
+        async function deleteNote(noteId) {
+            if (!confirm('Are you sure you want to delete this note?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/notes/${noteId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    loadNotes();
+                } else {
+                    alert('Failed to delete note. Please try again.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error deleting note. Please try again.');
+            }
+        }
+
+        // Helper function to escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Helper function to format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Allow saving note with Ctrl+Enter
+        document.getElementById('noteContent').addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                saveNote();
+            }
+        });
+    </script>
+</body>
+</html>
